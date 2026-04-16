@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: TaskForce
+  datasource:
+    url: ${SUPABASE_DB_URL}
+    username: ${SUPABASE_DB_USER}
+    password: ${SUPABASE_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+server:
+  port: 8080
+
+app:
+  jwt:
+    secret: ${SUPABASE_JWT_SECRET}
+    expiry-ms: ${JWT_EXPIRY_MS:86400000}
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  supabase:
+    url: ${SUPABASE_URL}
+    service-role-key: ${SUPABASE_SERVICE_ROLE_KEY}
+  google:
+    client-id: ${GOOGLE_CLIENT_ID}
+    client-secret: ${GOOGLE_CLIENT_SECRET}
+    calendar-api-key: ${GOOGLE_CALENDAR_API_KEY:}
