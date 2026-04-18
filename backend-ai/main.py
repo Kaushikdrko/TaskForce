@@ -2,10 +2,12 @@ import os
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
-load_dotenv()
+load_dotenv()  # must run before any module that reads os.getenv at import time
+
+from fastapi import FastAPI  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from routers.chat import router as chat_router  # noqa: E402
 
 
 @asynccontextmanager
@@ -26,6 +28,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+app.include_router(chat_router)
 
 
 @app.get("/health")
