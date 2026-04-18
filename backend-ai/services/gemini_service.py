@@ -237,3 +237,152 @@ def build_config(system_suffix: str = "") -> types.GenerateContentConfig:
 
 def get_tools() -> list:
     return _TOOLS
+
+
+# ── Agent loop ───────────────────────────────────────────────────────────────
+
+async def run_agent(
+    user_message: str,
+    history: list[types.Content],
+    user_jwt: str,
+    user_timezone: str = "UTC",
+    max_tool_rounds: int = 8,
+) -> tuple[str, list[types.Content]]:
+    """
+    Run the full Gemini function-call loop for one user turn.
+
+    Returns (final_text, updated_history) where updated_history includes
+    the new user message, all intermediate tool turns, and the final model reply.
+    """
+    from services.spring_client import execute_tool
+
+    config = build_config()
+    context_prefix = build_context_prefix(user_timezone)
+
+    # Prepend date/timezone context to the first user message of this turn
+    user_content = types.Content(
+        role="user",
+        parts=[types.Part(text=context_prefix + user_message)],
+    )
+
+    contents: list[types.Content] = list(history) + [user_content]
+
+    for _ in range(max_tool_rounds):
+        response = await generate_with_backoff(contents, config)
+
+        candidate = response.candidates[0]
+        model_content = candidate.content  # Content(role='model', parts=[...])
+
+        # Collect any function calls in this response
+        function_calls = [
+            part.function_call
+            for part in model_content.parts
+            if part.function_call is not None
+        ]
+
+        if not function_calls:
+            # No tool calls — this is the final text response
+            final_text = "".join(
+                part.text for part in model_content.parts if part.text
+            )
+            updated_history = list(history) + [user_content, model_content]
+            return final_text, updated_history
+
+        # Execute all function calls (may be parallel declarations in one turn)
+        contents.append(model_content)
+
+        tool_response_parts: list[types.Part] = []
+        for fc in function_calls:
+            result = await execute_tool(fc.name, fc.args, user_jwt)
+            tool_response_parts.append(
+                types.Part(
+                    function_response=types.FunctionResponse(
+                        name=fc.name,
+                        response={"result": result},
+                    )
+                )
+            )
+
+        tool_content = types.Content(role="user", parts=tool_response_parts)
+        contents.append(tool_content)
+
+    # Exceeded max tool rounds — ask Gemini to summarise with what it has
+    response = await generate_with_backoff(contents, config)
+    candidate = response.candidates[0]
+    model_content = candidate.content
+    final_text = "".join(part.text for part in model_content.parts if part.text)
+    updated_history = list(history) + [user_content] + contents[len(history) + 1 :] + [model_content]
+    return final_text, updated_history
+
+
+async def stream_agent(
+    user_message: str,
+    history: list[types.Content],
+    user_jwt: str,
+    user_timezone: str = "UTC",
+    max_tool_rounds: int = 8,
+):
+    """
+    Async generator that yields text tokens as they arrive.
+    Runs the full tool loop silently, then streams the final reply.
+    Yields str tokens, or dicts like {"tool": name, "args": args} for UI feedback.
+    """
+    from services.spring_client import execute_tool
+
+    config = build_config()
+    context_prefix = build_context_prefix(user_timezone)
+
+    user_content = types.Content(
+        role="user",
+        parts=[types.Part(text=context_prefix + user_message)],
+    )
+
+    contents: list[types.Content] = list(history) + [user_content]
+
+    for round_num in range(max_tool_rounds):
+        response = await generate_with_backoff(contents, config)
+        candidate = response.candidates[0]
+        model_content = candidate.content
+
+        function_calls = [
+            part.function_call
+            for part in model_content.parts
+            if part.function_call is not None
+        ]
+
+        if not function_calls:
+            # Stream the final text token by token
+            final_text = "".join(part.text for part in model_content.parts if part.text)
+            # Yield in small chunks so the WebSocket feels streamed
+            chunk_size = 4
+            for i in range(0, len(final_text), chunk_size):
+                yield final_text[i : i + chunk_size]
+                await asyncio.sleep(0)
+            return
+
+        contents.append(model_content)
+
+        tool_response_parts: list[types.Part] = []
+        for fc in function_calls:
+            # Signal the UI which tool is running
+            yield {"tool": fc.name, "args": dict(fc.args)}
+            result = await execute_tool(fc.name, fc.args, user_jwt)
+            tool_response_parts.append(
+                types.Part(
+                    function_response=types.FunctionResponse(
+                        name=fc.name,
+                        response={"result": result},
+                    )
+                )
+            )
+
+        contents.append(types.Content(role="user", parts=tool_response_parts))
+
+    # Fallback after max rounds
+    response = await generate_with_backoff(contents, config)
+    candidate = response.candidates[0]
+    model_content = candidate.content
+    final_text = "".join(part.text for part in model_content.parts if part.text)
+    for i in range(0, len(final_text), 4):
+        yield final_text[i : i + 4]
+        await asyncio.sleep(0)
