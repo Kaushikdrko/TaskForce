@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,7 +26,7 @@ public class TaskController {
             @AuthenticationPrincipal String userId,
             @RequestParam(required = false) String status,
             @RequestParam(name = "due_date", required = false)
-                @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dueDate,
+                @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime dueDate,
             @RequestParam(name = "folder_id", required = false) UUID folderId) {
         return ResponseEntity.ok(taskService.list(userId, status, dueDate, folderId));
     }

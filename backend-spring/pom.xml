@@ -76,6 +76,8 @@
 			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+		<!-- dotenv dependency removed — using Spring Boot's built-in spring.config.import instead -->
 	</dependencies>
 
 	<build>

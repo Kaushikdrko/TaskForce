@@ -2,7 +2,7 @@ package com.taskforce.tasks;
 
 import org.springframework.data.jpa.domain.Specification;
 
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 class TaskSpec {
@@ -19,7 +19,7 @@ class TaskSpec {
         return (root, query, cb) -> cb.equal(root.get("folderId"), folderId);
     }
 
-    static Specification<Task> hasDueDate(LocalDate dueDate) {
+    static Specification<Task> hasDueDate(OffsetDateTime dueDate) {
         return (root, query, cb) -> cb.equal(root.get("dueDate"), dueDate);
     }
 }

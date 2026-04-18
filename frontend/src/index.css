@@ -140,3 +140,60 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
+
+/* ── FullCalendar Overrides ─────────────────────────────────────────────── */
+
+.fc {
+  --fc-border-color: #f1f5f9; /* sky-100/slate-100 equivalent */
+  --fc-button-bg-color: transparent;
+  --fc-button-border-color: #cbd5e1; /* slate-300 */
+  --fc-button-text-color: #475569; /* slate-600 */
+  --fc-button-hover-bg-color: #f8fafc; /* slate-50 */
+  --fc-button-hover-border-color: #94a3b8; /* slate-400 */
+  --fc-button-active-bg-color: #f1f5f9;
+  --fc-button-active-border-color: #38bdf8; /* sky-400 */
+  --fc-today-bg-color: rgba(56, 189, 248, 0.05); /* sky-400 with opacity */
+  font-family: inherit;
+}
+
+.fc .fc-toolbar-title {
+  @apply text-lg font-medium text-slate-700;
+}
+
+.fc .fc-button {
+  @apply text-xs font-medium px-3 py-1.5 rounded transition-all shadow-none outline-none focus:ring-0;
+  text-transform: capitalize;
+}
+
+.fc .fc-button-primary:not(:disabled).fc-button-active, 
+.fc .fc-button-primary:not(:disabled):active {
+  @apply bg-sky-50 text-sky-600 border-sky-300;
+}
+
+.fc .fc-col-header-cell {
+  @apply py-3 bg-slate-50/50 text-[10px] font-semibold text-slate-400 uppercase tracking-widest border-b;
+}
+
+.fc .fc-daygrid-day-number {
+  @apply text-xs text-slate-500 p-2;
+}
+
+.fc .fc-daygrid-day.fc-day-today {
+  @apply bg-sky-50/30;
+}
+
+.fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+  @apply font-bold text-sky-600;
+}
+
+.fc-theme-standard td, .fc-theme-standard th {
+  border-color: #f1f5f9;
+}
+
+.fc-v-event {
+  @apply bg-sky-400 border-none rounded-sm shadow-sm p-0.5;
+}
+
+.fc-h-event {
+  @apply bg-sky-400 border-none rounded-sm shadow-sm;
+}

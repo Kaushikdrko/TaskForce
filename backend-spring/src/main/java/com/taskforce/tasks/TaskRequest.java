@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -19,7 +18,7 @@ public class TaskRequest {
 
     private String status;
     private String priority;
-    private LocalDate dueDate;
+    private OffsetDateTime dueDate;
     private OffsetDateTime scheduledStart;
     private Integer estimatedMinutes;
     private Integer actualMinutes;

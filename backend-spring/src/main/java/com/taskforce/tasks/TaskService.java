@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,7 +19,7 @@ public class TaskService {
         this.taskRepository = taskRepository;
     }
 
-    public List<Task> list(String userId, String status, LocalDate dueDate, UUID folderId) {
+    public List<Task> list(String userId, String status, OffsetDateTime dueDate, UUID folderId) {
         Specification<Task> spec = TaskSpec.hasUserId(UUID.fromString(userId));
         if (status   != null) spec = spec.and(TaskSpec.hasStatus(status));
         if (dueDate  != null) spec = spec.and(TaskSpec.hasDueDate(dueDate));

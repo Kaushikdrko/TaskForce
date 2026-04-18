@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -41,7 +40,7 @@ public class Task {
     private String priority = "medium";
 
     @Column(name = "due_date")
-    private LocalDate dueDate;
+    private OffsetDateTime dueDate;
 
     @Column(name = "scheduled_start")
     private OffsetDateTime scheduledStart;
