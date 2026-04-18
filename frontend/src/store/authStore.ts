@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabaseClient'
+import springApi from '@/lib/springApi'
 import type { Profile } from '@/types/user.types'
 
 interface AuthState {
@@ -69,16 +70,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 }))
 
 async function fetchAndSetProfile(
-  userId: string,
+  _userId: string,
   set: (partial: Partial<AuthState>) => void
 ) {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .single()
-
-  if (!error && data) {
-    set({ profile: data as Profile })
+  try {
+    const { data } = await springApi.get<Profile>('/api/users/me')
+    if (data) set({ profile: data })
+  } catch {
+    // Spring Boot may not be running in dev — silently ignore
   }
 }
