@@ -25,4 +25,15 @@ public class UserController {
                                             @Valid @RequestBody UpdateProfileRequest req) {
         return ResponseEntity.ok(userService.updateProfile(userId, req));
     }
+
+    @GetMapping("/me/preferences")
+    public ResponseEntity<SchedulePreferences> getPreferences(@AuthenticationPrincipal String userId) {
+        return ResponseEntity.ok(userService.getPreferences(userId));
+    }
+
+    @PutMapping("/me/preferences")
+    public ResponseEntity<SchedulePreferences> updatePreferences(@AuthenticationPrincipal String userId,
+                                                                  @RequestBody PreferencesRequest req) {
+        return ResponseEntity.ok(userService.updatePreferences(userId, req));
+    }
 }

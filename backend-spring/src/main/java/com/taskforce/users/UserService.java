@@ -11,9 +11,12 @@ import java.util.UUID;
 public class UserService {
 
     private final ProfileRepository profileRepository;
+    private final SchedulePreferencesRepository prefsRepository;
 
-    public UserService(ProfileRepository profileRepository) {
+    public UserService(ProfileRepository profileRepository,
+                       SchedulePreferencesRepository prefsRepository) {
         this.profileRepository = profileRepository;
+        this.prefsRepository = prefsRepository;
     }
 
     public Profile getProfile(String userId) {
@@ -30,5 +33,27 @@ public class UserService {
         if (req.getTimezone() != null)    profile.setTimezone(req.getTimezone());
 
         return profileRepository.save(profile);
+    }
+
+    public SchedulePreferences getPreferences(String userId) {
+        UUID uid = UUID.fromString(userId);
+        return prefsRepository.findById(uid).orElseGet(() -> {
+            SchedulePreferences defaults = new SchedulePreferences();
+            defaults.setUserId(uid);
+            return defaults;
+        });
+    }
+
+    @Transactional
+    public SchedulePreferences updatePreferences(String userId, PreferencesRequest req) {
+        SchedulePreferences prefs = getPreferences(userId);
+        prefs.setUserId(UUID.fromString(userId));
+        if (req.getWorkStartTime()       != null) prefs.setWorkStartTime(req.getWorkStartTime());
+        if (req.getWorkEndTime()         != null) prefs.setWorkEndTime(req.getWorkEndTime());
+        if (req.getWorkDays()            != null) prefs.setWorkDays(req.getWorkDays());
+        if (req.getPreferredFocusHours() != null) prefs.setPreferredFocusHours(req.getPreferredFocusHours());
+        if (req.getBreakDurationMinutes()!= null) prefs.setBreakDurationMinutes(req.getBreakDurationMinutes());
+        if (req.getMaxDailyTasks()       != null) prefs.setMaxDailyTasks(req.getMaxDailyTasks());
+        return prefsRepository.save(prefs);
     }
 }
