@@ -73,6 +73,5 @@ public class TaskService {
         if (req.getTags()             != null) task.setTags(req.getTags());
         if (req.getFolderId()         != null) task.setFolderId(req.getFolderId());
         if (req.getEventId()          != null) task.setEventId(req.getEventId());
-        if (req.getCreatedBy()        != null) task.setCreatedBy(req.getCreatedBy());
     }
 }

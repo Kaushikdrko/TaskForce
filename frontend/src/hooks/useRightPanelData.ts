@@ -21,7 +21,7 @@ export function useRightPanelData() {
         setTodayEvents([])
       }
     } catch (err) { 
-      console.error('Error fetching today events', err)
+      console.error('Error fetching today events', err instanceof Error ? err.message : err)
       setTodayEvents([])
     }
   }, [])
@@ -36,7 +36,7 @@ export function useRightPanelData() {
       const inProgressData = Array.isArray(inProgress.data) ? inProgress.data : []
       setCurrentTasks([...pendingData, ...inProgressData])
     } catch (err) { 
-      console.error('Error fetching current tasks', err)
+      console.error('Error fetching current tasks', err instanceof Error ? err.message : err)
       setCurrentTasks([])
     }
   }, [])
@@ -53,7 +53,7 @@ export function useRightPanelData() {
       const taskData = Array.isArray(tasks.data) ? tasks.data : []
       setUpcomingItems({ events: eventData, tasks: taskData })
     } catch (err) { 
-      console.error('Error fetching upcoming items', err)
+      console.error('Error fetching upcoming items', err instanceof Error ? err.message : err)
       setUpcomingItems({ events: [], tasks: [] })
     }
   }, [])

@@ -6,11 +6,26 @@ from fastapi import HTTPException, Query, status
 from jose import ExpiredSignatureError, JWTError, jwk, jwt
 from jose.utils import base64url_decode
 
+def _require(name: str) -> str:
+    val = os.getenv(name)
+    if not val:
+        raise RuntimeError(f"Required env var {name} is not set")
+    return val
+
+
 SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "")
 SUPABASE_JWKS_URL = os.getenv(
     "SUPABASE_JWKS_URL",
     "https://zoiaahtvppzczqinrclw.supabase.co/auth/v1/.well-known/jwks.json",
 )
+
+
+def _validate_secrets() -> None:
+    _require("SUPABASE_JWT_SECRET")
+    _require("SUPABASE_JWKS_URL")
+
+
+_validate_secrets()
 
 _credentials_exception = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,

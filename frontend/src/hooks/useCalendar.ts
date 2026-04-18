@@ -55,7 +55,7 @@ export function useCalendar() {
 
       setEvents(transformed)
     } catch (error) {
-      console.error('Failed to fetch calendar events:', error)
+      console.error('Failed to fetch calendar events:', error instanceof Error ? error.message : error)
       setEvents([])
     } finally {
       setLoading(false)

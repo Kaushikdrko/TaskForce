@@ -1,6 +1,7 @@
 package com.taskforce.tasks;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -16,8 +17,12 @@ public class TaskRequest {
     @NotBlank
     private String title;
 
+    @Pattern(regexp = "pending|in_progress|completed|cancelled")
     private String status;
+
+    @Pattern(regexp = "low|medium|high|urgent")
     private String priority;
+
     private OffsetDateTime dueDate;
     private OffsetDateTime scheduledStart;
     private Integer estimatedMinutes;
@@ -25,6 +30,4 @@ public class TaskRequest {
     private String[] tags;
     private UUID folderId;
     private UUID eventId;
-    // created_by is set server-side; agent passes "ai"
-    private String createdBy;
 }

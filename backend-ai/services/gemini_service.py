@@ -5,7 +5,14 @@ from datetime import datetime, timezone
 import google.genai as genai
 from google.genai import types
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+def _require(name: str) -> str:
+    val = os.getenv(name)
+    if not val:
+        raise RuntimeError(f"Required env var {name} is not set")
+    return val
+
+
+GEMINI_API_KEY = _require("GEMINI_API_KEY")
 MODEL = "gemini-2.0-flash"
 
 _client: genai.Client | None = None

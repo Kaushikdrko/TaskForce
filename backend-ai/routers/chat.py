@@ -1,5 +1,7 @@
 import json
 import logging
+import time
+from collections import defaultdict
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 
@@ -8,6 +10,19 @@ from db.supabase_client import load_chat_history, persist_messages
 from services.gemini_service import stream_agent
 
 logger = logging.getLogger(__name__)
+
+_rate: dict[str, list[float]] = defaultdict(list)
+MAX_MSGS_PER_MINUTE = 20
+
+
+def _check_rate(user_id: str) -> bool:
+    now = time.monotonic()
+    window = [t for t in _rate[user_id] if now - t < 60]
+    _rate[user_id] = window
+    if len(window) >= MAX_MSGS_PER_MINUTE:
+        return False
+    _rate[user_id].append(now)
+    return True
 
 router = APIRouter(prefix="/ai", tags=["chat"])
 
@@ -73,6 +88,10 @@ async def websocket_chat(
                 continue
 
             if not user_message:
+                continue
+
+            if not _check_rate(user_id):
+                await websocket.send_text(json.dumps({"type": "error", "message": "Rate limit exceeded. Please wait."}))
                 continue
 
             # Stream the agent response

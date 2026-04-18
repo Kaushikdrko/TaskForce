@@ -3,8 +3,16 @@ from functools import lru_cache
 
 from supabase import Client, create_client
 
-SUPABASE_URL = os.getenv("SUPABASE_URL", "")
-SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+
+def _require(name: str) -> str:
+    val = os.getenv(name)
+    if not val:
+        raise RuntimeError(f"Required env var {name} is not set")
+    return val
+
+
+SUPABASE_URL = _require("SUPABASE_URL")
+SUPABASE_SERVICE_ROLE_KEY = _require("SUPABASE_SERVICE_ROLE_KEY")
 
 
 @lru_cache(maxsize=1)

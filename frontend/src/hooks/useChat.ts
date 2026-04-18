@@ -50,13 +50,15 @@ export function useChat() {
             currentMsgIdRef.current = startAssistantMessage()
             setTyping(false)
           }
-          appendToken(currentMsgIdRef.current, frame.content ?? '')
+          // backend sends { type: 'token', text: '...' }
+          appendToken(currentMsgIdRef.current, frame.text ?? '')
         } else if (frame.type === 'tool') {
           if (!currentMsgIdRef.current) {
             currentMsgIdRef.current = startAssistantMessage()
             setTyping(false)
           }
-          appendToolCall(currentMsgIdRef.current, { tool: frame.tool, args: frame.args ?? {} })
+          // backend sends { type: 'tool', name: '...', args: {...} }
+          appendToolCall(currentMsgIdRef.current, { tool: frame.name, args: frame.args ?? {} })
         } else if (frame.type === 'done') {
           if (currentMsgIdRef.current) {
             finalizeMessage(currentMsgIdRef.current)
