@@ -4,6 +4,7 @@ import { useAuthStore } from '@/store/authStore'
 import { ProtectedRoute, GuestRoute } from '@/components/auth/ProtectedRoute'
 import LandingPage from '@/pages/LandingPage'
 import Dashboard from '@/pages/Dashboard'
+import ChatPage from '@/pages/ChatPage'
 
 export default function App() {
   const initialize = useAuthStore((s) => s.initialize)
@@ -17,6 +18,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<GuestRoute><LandingPage /></GuestRoute>} />
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
