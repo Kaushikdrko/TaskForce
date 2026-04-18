@@ -1,8 +1,14 @@
-import { Calendar, MessageSquare, Settings, FolderRoot, LogOut } from 'lucide-react'
+import { Calendar, MessageSquare, Settings, LogOut } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
+import { FoldersTab } from '@/components/dashboard/FoldersTab'
 
-export function Sidebar() {
+interface SidebarProps {
+  activeFolderId: string | null
+  onFolderSelect: (id: string | null) => void
+}
+
+export function Sidebar({ activeFolderId, onFolderSelect }: SidebarProps) {
   const location = useLocation()
   const { profile, user, signOut } = useAuthStore()
 
@@ -11,7 +17,7 @@ export function Sidebar() {
 
   const navItems = [
     { label: 'Calendar', icon: Calendar, path: '/dashboard' },
-    { label: 'Chat', icon: MessageSquare, path: '/chat' },
+    { label: 'Chat',     icon: MessageSquare, path: '/chat' },
     { label: 'Settings', icon: Settings, path: '/settings' },
   ]
 
@@ -20,8 +26,10 @@ export function Sidebar() {
       {/* Brand */}
       <div className="p-6 pb-2">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-6 bg-violet-400 flex items-center justify-center shadow-sm"
-            style={{ borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%' }}>
+          <div
+            className="w-8 h-6 bg-violet-400 flex items-center justify-center shadow-sm"
+            style={{ borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%' }}
+          >
             <span className="text-white text-xs font-semibold tracking-tight">tf</span>
           </div>
           <span className="text-violet-400 text-lg font-light tracking-widest">taskforce</span>
@@ -51,25 +59,11 @@ export function Sidebar() {
           })}
         </ul>
 
-        {/* Folders Section */}
-        <div className="mt-8">
-          <div className="flex items-center justify-between px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-widest">
-            Folders
-            <button className="hover:text-sky-500 transition-colors">
-              <FolderRoot size={14} />
-            </button>
-          </div>
-          <ul className="mt-2 space-y-1">
-            <li className="px-3 py-1.5 text-sm text-slate-500 flex items-center gap-2 hover:bg-slate-50 rounded-md cursor-pointer transition-colors">
-               <div className="w-2 h-2 rounded-full bg-sky-400" />
-               Work
-            </li>
-            <li className="px-3 py-1.5 text-sm text-slate-500 flex items-center gap-2 hover:bg-slate-50 rounded-md cursor-pointer transition-colors">
-               <div className="w-2 h-2 rounded-full bg-violet-400" />
-               Personal
-            </li>
-          </ul>
-        </div>
+        {/* Live Folders */}
+        <FoldersTab
+          activeFolderId={activeFolderId}
+          onFolderSelect={onFolderSelect}
+        />
       </nav>
 
       {/* User Info / Bottom */}
@@ -83,8 +77,8 @@ export function Sidebar() {
             <p className="text-[10px] text-slate-400 truncate">{email}</p>
           </div>
         </div>
-        
-        <button 
+
+        <button
           onClick={() => signOut()}
           className="flex items-center gap-2 w-full px-2 py-1.5 hover:bg-red-50 text-red-500 rounded-md transition-colors text-left text-xs font-medium"
         >

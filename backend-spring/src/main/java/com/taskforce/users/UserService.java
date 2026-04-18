@@ -19,9 +19,14 @@ public class UserService {
         this.prefsRepository = prefsRepository;
     }
 
+    @Transactional
     public Profile getProfile(String userId) {
-        return profileRepository.findById(UUID.fromString(userId))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found"));
+        UUID uid = UUID.fromString(userId);
+        return profileRepository.findById(uid).orElseGet(() -> {
+            Profile p = new Profile();
+            p.setId(uid);
+            return profileRepository.save(p);
+        });
     }
 
     @Transactional
