@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { Plus } from 'lucide-react'
 import { Sidebar } from '@/components/dashboard/Sidebar'
 import { CalendarView } from '@/components/dashboard/CalendarView'
@@ -6,6 +6,7 @@ import { RightPanel } from '@/components/dashboard/RightPanel'
 import { TaskDrawer } from '@/components/dashboard/TaskDrawer'
 import { EventModal } from '@/components/dashboard/EventModal'
 import { useRealtime } from '@/hooks/useRealtime'
+import { useChatStore } from '@/store/chatStore'
 import type { Task } from '@/types/task.types'
 import type { CalendarEvent } from '@/types/event.types'
 import type { FcEvent } from '@/hooks/useCalendar'
@@ -75,6 +76,14 @@ export default function Dashboard() {
   // ── Supabase Realtime ─────────────────────────────────────────────────
   useRealtime(handleTaskChange, handleEventChange)
 
+  // ── Refresh when AI agent makes tool calls ────────────────────────────
+  const dataVersion = useChatStore((s) => s.dataVersion)
+  useEffect(() => {
+    if (dataVersion === 0) return
+    calendarRefetchRef.current?.()
+    rightPanelRefreshRef.current?.()
+  }, [dataVersion])
+
   // ── After drawer save: refresh right panel ────────────────────────────
   const handleSaved = useCallback(() => {
     rightPanelRefreshRef.current?.()
@@ -124,6 +133,7 @@ export default function Dashboard() {
       <RightPanel
         onNewTask={() => openNewTask()}
         onEditTask={openEditTask}
+        activeFolderId={activeFolderId}
         refreshRef={rightPanelRefreshRef}
       />
 

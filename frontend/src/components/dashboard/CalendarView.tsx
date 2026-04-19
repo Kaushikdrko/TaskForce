@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
 import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
@@ -23,11 +23,20 @@ export function CalendarView({
 }: CalendarViewProps) {
   const { events, fetchEvents, refetch } = useCalendar()
   const fcRef = useRef<InstanceType<typeof FullCalendar>>(null)
+  const currentRangeRef = useRef<{ start: string; end: string } | null>(null)
 
   // Expose refetch to parent (for Realtime)
   if (calendarRefetchRef) {
     calendarRefetchRef.current = refetch
   }
+
+  // Re-fetch when folder filter changes without waiting for datesSet
+  useEffect(() => {
+    const range = currentRangeRef.current
+    if (range) {
+      fetchEvents(range.start, range.end, activeFolderId)
+    }
+  }, [activeFolderId, fetchEvents])
 
   const handleDateClick = (arg: DateClickArg) => {
     onDateClick?.(arg.dateStr)
@@ -51,6 +60,7 @@ export function CalendarView({
           }}
           events={events}
           datesSet={(arg) => {
+            currentRangeRef.current = { start: arg.startStr, end: arg.endStr }
             fetchEvents(arg.startStr, arg.endStr, activeFolderId)
           }}
           dateClick={handleDateClick}

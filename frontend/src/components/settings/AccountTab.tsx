@@ -62,7 +62,7 @@ export function AccountTab() {
   }
 
   return (
-    <div className="max-w-lg space-y-7">
+    <div className="max-w-2xl mx-auto space-y-7">
       {/* Avatar + identity */}
       <div className="flex items-center gap-4 p-4 rounded-xl bg-sky-50/60 border border-sky-100">
         <div className="w-14 h-14 rounded-full bg-sky-200 flex items-center justify-center text-sky-600 text-xl font-semibold select-none shrink-0">

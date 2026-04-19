@@ -71,7 +71,7 @@ export function SupportTab() {
   }
 
   return (
-    <div className="max-w-lg space-y-8">
+    <div className="max-w-2xl mx-auto space-y-8">
       {/* Submission form */}
       <div className="space-y-5">
         <div>

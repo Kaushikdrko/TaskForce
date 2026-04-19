@@ -3,6 +3,7 @@ import { Send, Wifi, WifiOff } from 'lucide-react'
 import { useChatStore } from '@/store/chatStore'
 import { useChat } from '@/hooks/useChat'
 import { MessageBubble } from './MessageBubble'
+import logo from '@/assets/logo.png'
 
 export function ChatWindow() {
   const [input, setInput] = useState('')
@@ -19,7 +20,7 @@ export function ChatWindow() {
 
   const handleSend = useCallback(() => {
     const text = input.trim()
-    if (!text || !isConnected) return
+    if (!text || !isConnected || isTyping) return
     sendMessage(text)
     setInput('')
     // reset textarea height
@@ -51,10 +52,7 @@ export function ChatWindow() {
       {/* Header */}
       <header className="h-16 border-b border-sky-50 bg-white flex items-center px-6 shrink-0 gap-3">
         <div className="flex items-center gap-2.5">
-          <div
-            className="w-6 h-4 bg-violet-400 shadow-sm"
-            style={{ borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%' }}
-          />
+          <img src={logo} alt="TaskForce" className="h-12 w-auto object-contain" />
           <h2 className="text-lg font-medium text-slate-700">AI Assistant</h2>
         </div>
 
@@ -77,11 +75,8 @@ export function ChatWindow() {
       <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 bg-slate-50 min-h-0">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-4 text-center select-none">
-            <div className="w-14 h-14 bg-sky-50 rounded-full flex items-center justify-center">
-              <div
-                className="w-7 h-5 bg-violet-300"
-                style={{ borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%' }}
-              />
+            <div className="w-24 h-24 bg-sky-50 rounded-full flex items-center justify-center">
+              <img src={logo} alt="TaskForce" className="h-16 w-auto object-contain" />
             </div>
             <div className="space-y-1">
               <p className="text-sm text-slate-500 font-medium">How can I help you today?</p>
@@ -147,14 +142,14 @@ export function ChatWindow() {
             onChange={() => {}}
             onKeyDown={handleKeyDown}
             placeholder={isConnected ? 'Message your AI assistant…' : 'Connecting…'}
-            disabled={!isConnected}
+            disabled={!isConnected || isTyping}
             rows={1}
             className="flex-1 resize-none bg-transparent text-sm text-slate-700 placeholder:text-slate-300 focus:outline-none leading-relaxed py-0.5 disabled:cursor-not-allowed"
             style={{ minHeight: '24px', maxHeight: '128px' }}
           />
           <button
             onClick={handleSend}
-            disabled={!input.trim() || !isConnected}
+            disabled={!input.trim() || !isConnected || isTyping}
             className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg bg-sky-500 hover:bg-sky-600 disabled:opacity-30 disabled:cursor-not-allowed text-white transition-colors"
           >
             <Send size={13} />

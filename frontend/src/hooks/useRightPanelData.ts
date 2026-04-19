@@ -4,7 +4,7 @@ import springApi from '@/lib/springApi'
 import type { CalendarEvent } from '@/types/event.types'
 import type { Task } from '@/types/task.types'
 
-export function useRightPanelData() {
+export function useRightPanelData(folderId?: string | null) {
   const [todayEvents, setTodayEvents] = useState<CalendarEvent[]>([])
   const [currentTasks, setCurrentTasks] = useState<Task[]>([])
   const [upcomingItems, setUpcomingItems] = useState<{ events: CalendarEvent[], tasks: Task[] }>({ events: [], tasks: [] })
@@ -14,7 +14,9 @@ export function useRightPanelData() {
     const start = formatISO(startOfDay(new Date()))
     const end = formatISO(endOfDay(new Date()))
     try {
-      const { data } = await springApi.get<CalendarEvent[]>('/api/events', { params: { start, end } })
+      const params: Record<string, string> = { start, end }
+      if (folderId) params.folder_id = folderId
+      const { data } = await springApi.get<CalendarEvent[]>('/api/events', { params })
       if (Array.isArray(data)) {
         setTodayEvents(data)
       } else {
@@ -28,9 +30,10 @@ export function useRightPanelData() {
 
   const fetchCurrentTasks = useCallback(async () => {
     try {
+      const baseParams = folderId ? { folder_id: folderId } : {}
       const [pending, inProgress] = await Promise.all([
-        springApi.get<Task[]>('/api/tasks', { params: { status: 'pending' } }),
-        springApi.get<Task[]>('/api/tasks', { params: { status: 'in_progress' } })
+        springApi.get<Task[]>('/api/tasks', { params: { status: 'pending', ...baseParams } }),
+        springApi.get<Task[]>('/api/tasks', { params: { status: 'in_progress', ...baseParams } })
       ])
       const pendingData = Array.isArray(pending.data) ? pending.data : []
       const inProgressData = Array.isArray(inProgress.data) ? inProgress.data : []
@@ -45,9 +48,10 @@ export function useRightPanelData() {
     const start = formatISO(addDays(startOfDay(new Date()), 1)) // Tomorrow
     const end = formatISO(endOfDay(addDays(new Date(), 7)))    // 7 days from now
     try {
+      const folderParam = folderId ? { folder_id: folderId } : {}
       const [events, tasks] = await Promise.all([
-        springApi.get<CalendarEvent[]>('/api/events', { params: { start, end } }),
-        springApi.get<Task[]>('/api/tasks', { params: { due_date: formatISO(endOfDay(addDays(new Date(), 7)), { representation: 'date' }) } }) 
+        springApi.get<CalendarEvent[]>('/api/events', { params: { start, end, ...folderParam } }),
+        springApi.get<Task[]>('/api/tasks', { params: { due_date: formatISO(endOfDay(addDays(new Date(), 7))), ...folderParam } })
       ])
       const eventData = Array.isArray(events.data) ? events.data : []
       const taskData = Array.isArray(tasks.data) ? tasks.data : []
@@ -66,7 +70,7 @@ export function useRightPanelData() {
 
   useEffect(() => {
     refreshAll()
-  }, [refreshAll])
+  }, [refreshAll, folderId])
 
   return {
     todayEvents,

@@ -17,6 +17,7 @@ export function useChat() {
     finalizeMessage,
     setConnected,
     setTyping,
+    bumpDataVersion,
   } = useChatStore()
 
   const connect = useCallback(async () => {
@@ -27,13 +28,20 @@ export function useChat() {
     if (!session) return
 
     const url = `${WS_BASE}/ai/ws/chat/${user.id}?token=${session.access_token}`
-    const ws = new WebSocket(url)
+    let ws: WebSocket
+    try {
+      ws = new WebSocket(url)
+    } catch (err) {
+      console.error('WebSocket connection failed:', err)
+      return
+    }
     wsRef.current = ws
 
     ws.onopen = () => setConnected(true)
-    ws.onclose = () => {
+    ws.onerror = (e) => console.error('WebSocket error:', e)
+    ws.onclose = (e) => {
+      console.log('WebSocket closed:', e.code, e.reason)
       setConnected(false)
-      // clear any stuck typing state
       setTyping(false)
       if (currentMsgIdRef.current) {
         finalizeMessage(currentMsgIdRef.current)
@@ -61,6 +69,8 @@ export function useChat() {
           appendToolCall(currentMsgIdRef.current, { tool: frame.name, args: frame.args ?? {} })
         } else if (frame.type === 'done') {
           if (currentMsgIdRef.current) {
+            const msg = useChatStore.getState().messages.find(m => m.id === currentMsgIdRef.current)
+            if (msg?.toolCalls?.length) bumpDataVersion()
             finalizeMessage(currentMsgIdRef.current)
             currentMsgIdRef.current = null
           }
@@ -76,12 +86,16 @@ export function useChat() {
         // ignore malformed frames
       }
     }
-  }, [user, startAssistantMessage, appendToken, appendToolCall, finalizeMessage, setConnected, setTyping])
+  }, [user, startAssistantMessage, appendToken, appendToolCall, finalizeMessage, setConnected, setTyping, bumpDataVersion])
 
   const disconnect = useCallback(() => {
-    wsRef.current?.close()
-    wsRef.current = null
-  }, [])
+    if (wsRef.current) {
+      wsRef.current.onclose = null  // prevent stale onclose from firing after remount
+      wsRef.current.close()
+      wsRef.current = null
+    }
+    setConnected(false)
+  }, [setConnected])
 
   const sendMessage = useCallback(
     (text: string) => {

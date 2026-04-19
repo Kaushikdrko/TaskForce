@@ -8,6 +8,7 @@ interface ChatState {
   messages: ChatMessage[]
   isConnected: boolean
   isTyping: boolean
+  dataVersion: number
 
   addUserMessage: (content: string) => void
   startAssistantMessage: () => string
@@ -16,6 +17,7 @@ interface ChatState {
   finalizeMessage: (id: string) => void
   setConnected: (connected: boolean) => void
   setTyping: (typing: boolean) => void
+  bumpDataVersion: () => void
   clear: () => void
 }
 
@@ -23,6 +25,7 @@ export const useChatStore = create<ChatState>((set) => ({
   messages: [],
   isConnected: false,
   isTyping: false,
+  dataVersion: 0,
 
   addUserMessage: (content) =>
     set((state) => ({
@@ -66,5 +69,6 @@ export const useChatStore = create<ChatState>((set) => ({
 
   setConnected: (connected) => set({ isConnected: connected }),
   setTyping: (typing) => set({ isTyping: typing }),
+  bumpDataVersion: () => set((s) => ({ dataVersion: s.dataVersion + 1 })),
   clear: () => set({ messages: [] }),
 }))

@@ -72,7 +72,7 @@ export function AiTab() {
   }
 
   return (
-    <div className="max-w-lg space-y-8">
+    <div className="max-w-2xl mx-auto space-y-8">
       {/* Behaviour toggles */}
       <div className="space-y-1">
         <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">

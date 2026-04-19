@@ -106,7 +106,6 @@ async def websocket_chat(
                     user_timezone=user_timezone,
                 ):
                     if isinstance(chunk, dict):
-                        # Tool-call notification — send to UI for display
                         tool_calls_log.append(chunk)
                         await websocket.send_text(json.dumps({"type": "tool", "name": chunk["tool"], "args": chunk["args"]}))
                     else:
@@ -115,9 +114,14 @@ async def websocket_chat(
 
                 await websocket.send_text(json.dumps({"type": "done"}))
 
+            except WebSocketDisconnect:
+                raise
             except Exception as e:
                 logger.error("Agent error for user %s: %s", user_id, e)
-                await websocket.send_text(json.dumps({"type": "error", "message": "Agent error — please try again"}))
+                try:
+                    await websocket.send_text(json.dumps({"type": "error", "message": "Agent error — please try again"}))
+                except Exception:
+                    raise WebSocketDisconnect(code=1006)
                 continue
 
             # Persist exchange and update in-memory history

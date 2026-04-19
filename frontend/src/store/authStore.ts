@@ -3,6 +3,7 @@ import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabaseClient'
 import springApi from '@/lib/springApi'
 import type { Profile } from '@/types/user.types'
+import { useChatStore } from '@/store/chatStore'
 
 interface AuthState {
   session: Session | null
@@ -51,6 +52,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       } else {
         // SIGNED_OUT — clear everything
         set({ profile: null })
+        useChatStore.getState().clear()
       }
     })
   },

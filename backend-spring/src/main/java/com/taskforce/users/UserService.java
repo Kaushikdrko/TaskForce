@@ -1,6 +1,7 @@
 package com.taskforce.users;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -25,6 +26,10 @@ public class UserService {
         return profileRepository.findById(uid).orElseGet(() -> {
             Profile p = new Profile();
             p.setId(uid);
+            Object credentials = SecurityContextHolder.getContext().getAuthentication().getCredentials();
+            if (credentials instanceof String email && email != null && !email.isBlank()) {
+                p.setEmail(email);
+            }
             return profileRepository.save(p);
         });
     }

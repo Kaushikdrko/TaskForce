@@ -1,7 +1,16 @@
 import os
+import re
 from typing import Any
 
 import httpx
+
+
+def _to_camel(snake: str) -> str:
+    return re.sub(r"_([a-z])", lambda m: m.group(1).upper(), snake)
+
+
+def _camel_keys(d: dict) -> dict:
+    return {_to_camel(k): v for k, v in d.items()}
 
 SPRING_BOOT_URL = os.getenv("SPRING_BOOT_URL", "http://localhost:8080")
 TIMEOUT = 15.0
@@ -42,12 +51,12 @@ async def _delete(path: str, user_jwt: str) -> dict:
 # ── Task operations ──────────────────────────────────────────────────────────
 
 async def create_task(args: dict, user_jwt: str) -> dict:
-    return await _post("/api/tasks", user_jwt, args)
+    return await _post("/api/tasks", user_jwt, _camel_keys(args))
 
 
 async def update_task(args: dict, user_jwt: str) -> dict:
     task_id = args.pop("task_id")
-    return await _put(f"/api/tasks/{task_id}", user_jwt, args)
+    return await _put(f"/api/tasks/{task_id}", user_jwt, _camel_keys(args))
 
 
 async def delete_task(args: dict, user_jwt: str) -> dict:
@@ -57,7 +66,7 @@ async def delete_task(args: dict, user_jwt: str) -> dict:
 # ── Event operations ─────────────────────────────────────────────────────────
 
 async def create_event(args: dict, user_jwt: str) -> dict:
-    return await _post("/api/events", user_jwt, args)
+    return await _post("/api/events", user_jwt, _camel_keys(args))
 
 
 async def delete_event(args: dict, user_jwt: str) -> dict:

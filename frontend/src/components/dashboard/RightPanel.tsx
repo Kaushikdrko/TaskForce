@@ -10,7 +10,7 @@ type Tab = 'events' | 'tasks' | 'upcoming'
 interface RightPanelProps {
   onNewTask: () => void
   onEditTask: (task: Task) => void
-  /** Passed from Dashboard so Realtime can call refreshAll */
+  activeFolderId?: string | null
   refreshRef?: React.MutableRefObject<(() => void) | null>
 }
 
@@ -20,9 +20,9 @@ const PRIORITY_COLOR: Record<string, string> = {
   low:    'text-sky-400',
 }
 
-export function RightPanel({ onNewTask, onEditTask, refreshRef }: RightPanelProps) {
+export function RightPanel({ onNewTask, onEditTask, activeFolderId, refreshRef }: RightPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>('events')
-  const { todayEvents, currentTasks, upcomingItems, loading, refreshAll } = useRightPanelData()
+  const { todayEvents, currentTasks, upcomingItems, loading, refreshAll } = useRightPanelData(activeFolderId)
 
   // Expose refreshAll to parent (for Realtime)
   if (refreshRef) refreshRef.current = refreshAll

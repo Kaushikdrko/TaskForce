@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { supabase } from '@/lib/supabaseClient'
+import authLogos from '@/assets/authlogos.png'
 
 type View = 'login' | 'register' | 'mfa' | 'verify-email'
 
@@ -294,9 +295,8 @@ export default function LandingPage() {
       </div>
 
       {/* ── Right panel — branding ────────────────────────────────────── */}
-      <div className="w-1/2 flex flex-col items-center justify-center gap-6 select-none">
-        <TaskForceLogo />
-        <p className="text-slate-400 text-sm tracking-wide">AI-powered calendar &amp; tasks</p>
+      <div className="w-1/2 flex flex-col items-center justify-center select-none">
+        <img src={authLogos} alt="TaskForce" className="w-3/4 max-w-sm object-contain" />
       </div>
 
     </div>

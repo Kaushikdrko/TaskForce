@@ -87,11 +87,12 @@ public class JwtFilter extends OncePerRequestFilter {
             JWTVerifier verifier = JWT.require(algorithm).build();
             DecodedJWT jwt = verifier.verify(token);
 
-            // sub claim = Supabase user UUID
+            // sub claim = Supabase user UUID; email stored as credentials for profile auto-create
             String userId = jwt.getSubject();
+            String email = jwt.getClaim("email").asString();
 
             UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(userId, null, List.of());
+                    new UsernamePasswordAuthenticationToken(userId, email, List.of());
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
 

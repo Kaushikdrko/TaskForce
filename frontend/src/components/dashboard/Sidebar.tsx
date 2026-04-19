@@ -2,6 +2,7 @@ import { Calendar, MessageSquare, Settings, LogOut } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { FoldersTab } from '@/components/dashboard/FoldersTab'
+import logo from '@/assets/logo.png'
 
 interface SidebarProps {
   activeFolderId: string | null
@@ -26,13 +27,7 @@ export function Sidebar({ activeFolderId, onFolderSelect }: SidebarProps) {
       {/* Brand */}
       <div className="p-6 pb-2">
         <div className="flex items-center gap-3">
-          <div
-            className="w-8 h-6 bg-violet-400 flex items-center justify-center shadow-sm"
-            style={{ borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%' }}
-          >
-            <span className="text-white text-xs font-semibold tracking-tight">tf</span>
-          </div>
-          <span className="text-violet-400 text-lg font-light tracking-widest">taskforce</span>
+          <img src={logo} alt="TaskForce" className="h-16 w-auto object-contain" />
         </div>
       </div>
 

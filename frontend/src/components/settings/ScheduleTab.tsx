@@ -86,7 +86,7 @@ export function ScheduleTab() {
   }
 
   return (
-    <div className="max-w-lg space-y-7">
+    <div className="max-w-2xl mx-auto space-y-7">
       {/* Work Hours */}
       <div className="space-y-2">
         <label className={LABEL}>Work Hours</label>
