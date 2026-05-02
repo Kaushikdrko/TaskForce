@@ -25,10 +25,20 @@ public class TaskController {
     public ResponseEntity<List<Task>> list(
             @AuthenticationPrincipal String userId,
             @RequestParam(required = false) String status,
-            @RequestParam(name = "due_date", required = false)
-                @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime dueDate,
-            @RequestParam(name = "folder_id", required = false) UUID folderId) {
-        return ResponseEntity.ok(taskService.list(userId, status, dueDate, folderId));
+            @RequestParam(name = "start_date", required = false)
+                @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime startDate,
+            @RequestParam(name = "end_date", required = false)
+                @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime endDate,
+            @RequestParam(name = "folder_id", required = false) UUID folderId,
+            @RequestParam(name = "include_undated", required = false, defaultValue = "false") boolean includeUndated) {
+        return ResponseEntity.ok(taskService.list(userId, status, startDate, endDate, folderId, includeUndated));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<Task>> search(
+            @AuthenticationPrincipal String userId,
+            @RequestParam String q) {
+        return ResponseEntity.ok(taskService.search(userId, q));
     }
 
     @PostMapping

@@ -30,6 +30,13 @@ public class CalendarController {
         return ResponseEntity.ok(eventService.list(userId, start, end, folderId));
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<List<Event>> search(
+            @AuthenticationPrincipal String userId,
+            @RequestParam String q) {
+        return ResponseEntity.ok(eventService.search(userId, q));
+    }
+
     @PostMapping
     public ResponseEntity<Event> create(
             @AuthenticationPrincipal String userId,

@@ -13,7 +13,7 @@ def _require(name: str) -> str:
 
 
 GEMINI_API_KEY = _require("GEMINI_API_KEY")
-MODEL = "gemini-2.0-flash"
+MODEL = "gemini-2.5-flash"
 
 _client: genai.Client | None = None
 
@@ -146,8 +146,10 @@ _TOOLS = [
             types.FunctionDeclaration(
                 name="get_schedule",
                 description=(
-                    "Retrieve the user's tasks and events for a given date range. "
-                    "Call this before any update or delete to get real IDs — never fabricate UUIDs."
+                    "Retrieve the user's calendar events and tasks for a given date range. "
+                    "Tasks with no due_date are also included in results. "
+                    "Call this before any update or delete to get real IDs — never fabricate UUIDs. "
+                    "If you cannot find an item by date range, use search_items or list_all_tasks instead."
                 ),
                 parameters=types.Schema(
                     type="OBJECT",
@@ -179,6 +181,43 @@ _TOOLS = [
                     required=["task_title", "duration_minutes"],
                 ),
             ),
+            types.FunctionDeclaration(
+                name="search_items",
+                description=(
+                    "Search for tasks and events by keyword or partial title. "
+                    "Use this whenever the user refers to an item by name (e.g. 'delete Hw#1', 'reschedule dentist') "
+                    "and you do not already have its ID, or when the date of the item is unknown. "
+                    "Returns matching tasks and events regardless of date."
+                ),
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "query": types.Schema(
+                            type="STRING",
+                            description="Keyword or partial title to search for. Case-insensitive.",
+                        ),
+                    },
+                    required=["query"],
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="list_all_tasks",
+                description=(
+                    "Return ALL tasks for this user, optionally filtered by status. "
+                    "Use when the user asks about all open/pending work, or to find a task without knowing its date. "
+                    "Tasks with no due_date only appear here or via search_items."
+                ),
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "status": types.Schema(
+                            type="STRING",
+                            description="Optional filter: pending | in_progress | completed | cancelled. Omit for all tasks.",
+                        ),
+                    },
+                    required=[],
+                ),
+            ),
         ]
     )
 ]
@@ -188,7 +227,7 @@ _TOOLS = [
 _SYSTEM_PROMPT = """You are TaskForce AI, a concise and helpful calendar and task management assistant.
 
 Rules you must always follow:
-- NEVER fabricate task or event UUIDs. If you need to update or delete something, call get_schedule first to retrieve the real ID.
+- NEVER fabricate task or event UUIDs. If you need to update or delete something, call search_items or get_schedule first to retrieve the real ID.
 - Before calling delete_task or delete_event, always describe exactly what you found and ask "Are you sure you want to delete [name]?" — wait for the user to reply "yes" or similar before executing the delete.
 - When the user replies with "yes", "confirm", "go ahead", "do it", or similar, proceed with the delete immediately.
 - If the user says "delete task X" but X is found as a calendar event (not a task), use delete_event instead, and vice versa.
@@ -198,6 +237,10 @@ Rules you must always follow:
 - Be concise. Confirm actions with a short one-line summary after completing them (e.g. "Created task: Dentist appointment — Friday 2pm ✓").
 - If a request is ambiguous, ask one clarifying question rather than guessing.
 - When the user asks what's on their schedule, call get_schedule and summarise the results clearly.
+- When the user refers to a task or event by name (e.g. "delete Hw#1", "update dentist", "find my standup"), ALWAYS call search_items first with that name. Do NOT try to guess a date and call get_schedule — the item may be in the past or have no due_date.
+- When using get_schedule, prefer wide date ranges. For "this week" use the full Mon–Sun range. For anything described as recent, past, or overdue, set start_date at least 30 days before today. Never assume an item only exists in the future.
+- If get_schedule returns an empty result or does not contain the item the user mentioned, immediately call search_items with the item's title before telling the user it was not found.
+- Tasks may have no due_date. Use list_all_tasks to see all tasks when the user asks about open or pending work without specifying a date.
 """
 
 

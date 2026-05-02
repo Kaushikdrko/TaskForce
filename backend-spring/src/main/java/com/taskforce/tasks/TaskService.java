@@ -19,12 +19,37 @@ public class TaskService {
         this.taskRepository = taskRepository;
     }
 
-    public List<Task> list(String userId, String status, OffsetDateTime dueDate, UUID folderId) {
+    public List<Task> list(String userId, String status,
+                           OffsetDateTime startDate, OffsetDateTime endDate,
+                           UUID folderId, boolean includeUndated) {
         Specification<Task> spec = TaskSpec.hasUserId(UUID.fromString(userId));
         if (status   != null) spec = spec.and(TaskSpec.hasStatus(status));
-        if (dueDate  != null) spec = spec.and(TaskSpec.hasDueDate(dueDate));
         if (folderId != null) spec = spec.and(TaskSpec.hasFolderId(folderId));
+
+        if (startDate != null || endDate != null) {
+            Specification<Task> rangeSpec;
+            if (startDate != null && endDate != null) {
+                rangeSpec = TaskSpec.dueDateFrom(startDate).and(TaskSpec.dueDateTo(endDate));
+            } else if (startDate != null) {
+                rangeSpec = TaskSpec.dueDateFrom(startDate);
+            } else {
+                rangeSpec = TaskSpec.dueDateTo(endDate);
+            }
+
+            if (includeUndated) {
+                Specification<Task> nullDueDate = (root, query, cb) -> cb.isNull(root.get("dueDate"));
+                spec = spec.and(rangeSpec.or(nullDueDate));
+            } else {
+                spec = spec.and(rangeSpec);
+            }
+        }
         return taskRepository.findAll(spec);
+    }
+
+    public List<Task> search(String userId, String keyword) {
+        return taskRepository.findAll(
+            TaskSpec.hasUserId(UUID.fromString(userId))
+                .and(TaskSpec.titleContains(keyword)));
     }
 
     @Transactional

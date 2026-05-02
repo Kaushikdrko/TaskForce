@@ -1,8 +1,11 @@
+import logging
 import os
 import re
 from typing import Any
 
 import httpx
+
+_logger = logging.getLogger(__name__)
 
 
 def _to_camel(snake: str) -> str:
@@ -76,9 +79,28 @@ async def delete_event(args: dict, user_jwt: str) -> dict:
 # ── Schedule operations ──────────────────────────────────────────────────────
 
 async def get_schedule(args: dict, user_jwt: str) -> dict:
-    events = await _get("/api/events", user_jwt, {"start": args["start_date"], "end": args["end_date"]})
-    tasks = await _get("/api/tasks", user_jwt, {"due_date": args["end_date"]})
+    start = args["start_date"]
+    end   = args["end_date"]
+    events = await _get("/api/events", user_jwt, {"start": start, "end": end})
+    # include_undated=true: returns tasks in the date range PLUS tasks with no due_date
+    tasks  = await _get("/api/tasks",  user_jwt,
+                        {"start_date": start, "end_date": end, "include_undated": "true"})
     return {"events": events, "tasks": tasks}
+
+
+async def search_items(args: dict, user_jwt: str) -> dict:
+    q      = args["query"]
+    tasks  = await _get("/api/tasks/search",  user_jwt, {"q": q})
+    events = await _get("/api/events/search", user_jwt, {"q": q})
+    return {"tasks": tasks, "events": events}
+
+
+async def list_all_tasks(args: dict, user_jwt: str) -> dict:
+    params: dict = {}
+    if args.get("status"):
+        params["status"] = args["status"]
+    tasks = await _get("/api/tasks", user_jwt, params or None)
+    return {"tasks": tasks}
 
 
 async def suggest_schedule(args: dict, user_jwt: str) -> dict:
@@ -100,13 +122,15 @@ async def suggest_schedule(args: dict, user_jwt: str) -> dict:
 # ── Dispatch table ───────────────────────────────────────────────────────────
 
 TOOL_HANDLERS: dict[str, Any] = {
-    "create_task": create_task,
-    "update_task": update_task,
-    "delete_task": delete_task,
-    "create_event": create_event,
-    "delete_event": delete_event,
-    "get_schedule": get_schedule,
+    "create_task":     create_task,
+    "update_task":     update_task,
+    "delete_task":     delete_task,
+    "create_event":    create_event,
+    "delete_event":    delete_event,
+    "get_schedule":    get_schedule,
     "suggest_schedule": suggest_schedule,
+    "search_items":    search_items,
+    "list_all_tasks":  list_all_tasks,
 }
 
 
@@ -114,11 +138,14 @@ async def execute_tool(name: str, args: dict, user_jwt: str) -> Any:
     handler = TOOL_HANDLERS.get(name)
     if handler is None:
         return {"error": f"Unknown tool: {name}"}
+    _logger.info("execute_tool: %s args=%r", name, dict(args))
     try:
-        # args from Gemini is a MapComposite — convert to plain dict and copy
-        # so callers that pop keys don't mutate the original
-        return await handler(dict(args), user_jwt)
+        result = await handler(dict(args), user_jwt)
+        _logger.info("execute_tool result for %s: %r", name, result)
+        return result
     except httpx.HTTPStatusError as e:
+        _logger.error("execute_tool HTTP error for %s: %s %s", name, e.response.status_code, e.response.text)
         return {"error": f"Spring Boot error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
+        _logger.error("execute_tool exception for %s: %s", name, e)
         return {"error": str(e)}

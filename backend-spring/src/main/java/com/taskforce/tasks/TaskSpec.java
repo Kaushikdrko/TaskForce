@@ -19,7 +19,16 @@ class TaskSpec {
         return (root, query, cb) -> cb.equal(root.get("folderId"), folderId);
     }
 
-    static Specification<Task> hasDueDate(OffsetDateTime dueDate) {
-        return (root, query, cb) -> cb.equal(root.get("dueDate"), dueDate);
+    static Specification<Task> dueDateFrom(OffsetDateTime start) {
+        return (root, query, cb) -> cb.greaterThanOrEqualTo(root.get("dueDate"), start);
+    }
+
+    static Specification<Task> dueDateTo(OffsetDateTime end) {
+        return (root, query, cb) -> cb.lessThanOrEqualTo(root.get("dueDate"), end);
+    }
+
+    static Specification<Task> titleContains(String keyword) {
+        return (root, query, cb) ->
+            cb.like(cb.lower(root.get("title")), "%" + keyword.toLowerCase() + "%");
     }
 }

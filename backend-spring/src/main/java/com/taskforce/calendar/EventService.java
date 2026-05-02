@@ -33,6 +33,11 @@ public class EventService {
         return eventRepository.findByUserId(uid);
     }
 
+    public List<Event> search(String userId, String keyword) {
+        return eventRepository.findByUserIdAndTitleContainingIgnoreCase(
+            UUID.fromString(userId), keyword);
+    }
+
     @Transactional
     public Event create(String userId, EventRequest req) {
         Event event = new Event();

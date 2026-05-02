@@ -45,4 +45,15 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
     List<Event> findByUserIdAndFolderIdOrderByStartTime(UUID userId, UUID folderId);
 
     Optional<Event> findByIdAndUserId(UUID id, UUID userId);
+
+    @Query("""
+        SELECT e FROM Event e
+        WHERE e.userId = :userId
+          AND LOWER(e.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
+        ORDER BY e.startTime
+        """)
+    List<Event> findByUserIdAndTitleContainingIgnoreCase(
+        @Param("userId") UUID userId,
+        @Param("keyword") String keyword
+    );
 }
