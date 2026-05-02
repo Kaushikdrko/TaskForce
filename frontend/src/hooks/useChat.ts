@@ -8,12 +8,14 @@ const WS_BASE = import.meta.env.VITE_FASTAPI_WS_URL as string
 export function useChat() {
   const wsRef = useRef<WebSocket | null>(null)
   const currentMsgIdRef = useRef<string | null>(null)
+  const toolCallIndexRef = useRef<number>(0)
   const { user } = useAuthStore()
   const {
     addUserMessage,
     startAssistantMessage,
     appendToken,
     appendToolCall,
+    markToolFailed,
     finalizeMessage,
     setConnected,
     setTyping,
@@ -58,15 +60,19 @@ export function useChat() {
             currentMsgIdRef.current = startAssistantMessage()
             setTyping(false)
           }
-          // backend sends { type: 'token', text: '...' }
           appendToken(currentMsgIdRef.current, frame.text ?? '')
         } else if (frame.type === 'tool') {
           if (!currentMsgIdRef.current) {
             currentMsgIdRef.current = startAssistantMessage()
+            toolCallIndexRef.current = 0
             setTyping(false)
           }
-          // backend sends { type: 'tool', name: '...', args: {...} }
           appendToolCall(currentMsgIdRef.current, { tool: frame.name, args: frame.args ?? {} })
+          toolCallIndexRef.current++
+        } else if (frame.type === 'tool_result') {
+          if (currentMsgIdRef.current && !frame.success) {
+            markToolFailed(currentMsgIdRef.current, toolCallIndexRef.current - 1)
+          }
         } else if (frame.type === 'done') {
           if (currentMsgIdRef.current) {
             const msg = useChatStore.getState().messages.find(m => m.id === currentMsgIdRef.current)
@@ -105,6 +111,7 @@ export function useChat() {
 
       addUserMessage(trimmed)
       setTyping(true)
+      toolCallIndexRef.current = 0
       wsRef.current.send(JSON.stringify({ message: trimmed }))
     },
     [addUserMessage, setTyping]

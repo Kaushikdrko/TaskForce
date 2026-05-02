@@ -8,10 +8,14 @@ export type ToolName =
   | 'delete_event'
   | 'get_schedule'
   | 'suggest_schedule'
+  | 'search_items'
+  | 'list_all_tasks'
+  | 'get_user_preferences'
 
 export interface ToolCall {
   tool: ToolName
   args: Record<string, unknown>
+  failed?: boolean
 }
 
 export interface ChatMessage {

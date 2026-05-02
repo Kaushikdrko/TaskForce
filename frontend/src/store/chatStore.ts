@@ -14,6 +14,7 @@ interface ChatState {
   startAssistantMessage: () => string
   appendToken: (id: string, token: string) => void
   appendToolCall: (id: string, toolCall: ToolCall) => void
+  markToolFailed: (id: string, index: number) => void
   finalizeMessage: (id: string) => void
   setConnected: (connected: boolean) => void
   setTyping: (typing: boolean) => void
@@ -57,6 +58,15 @@ export const useChatStore = create<ChatState>((set) => ({
     set((state) => ({
       messages: state.messages.map((m) =>
         m.id === id ? { ...m, toolCalls: [...m.toolCalls, toolCall] } : m
+      ),
+    })),
+
+  markToolFailed: (id, index) =>
+    set((state) => ({
+      messages: state.messages.map((m) =>
+        m.id === id
+          ? { ...m, toolCalls: m.toolCalls.map((tc, i) => i === index ? { ...tc, failed: true } : tc) }
+          : m
       ),
     })),
 

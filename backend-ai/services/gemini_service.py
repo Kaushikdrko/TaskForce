@@ -13,7 +13,7 @@ def _require(name: str) -> str:
 
 
 GEMINI_API_KEY = _require("GEMINI_API_KEY")
-MODEL = "gemini-2.5-flash"
+MODEL = "gemini-2.0-flash-lite"
 
 _client: genai.Client | None = None
 
@@ -168,18 +168,43 @@ _TOOLS = [
             ),
             types.FunctionDeclaration(
                 name="suggest_schedule",
-                description="Suggest optimal time slots for a task given its title and estimated duration.",
+                description=(
+                    "Plan optimal time slots for one or more tasks/events within the user's work schedule. "
+                    "Returns the user's existing calendar, their schedule preferences (work hours, work days, "
+                    "break duration, max daily tasks), and the items to place. Use this before bulk-creating "
+                    "events or tasks so you can distribute them intelligently across available slots."
+                ),
                 parameters=types.Schema(
                     type="OBJECT",
                     properties={
-                        "task_title": types.Schema(type="STRING", description="Title of the task to schedule"),
-                        "duration_minutes": types.Schema(
+                        "items": types.Schema(
+                            type="ARRAY",
+                            description="List of items to schedule. Each has a title and optional duration_minutes (default 60).",
+                            items=types.Schema(
+                                type="OBJECT",
+                                properties={
+                                    "title": types.Schema(type="STRING", description="Title of the task or event"),
+                                    "duration_minutes": types.Schema(type="INTEGER", description="Duration in minutes. Default 60."),
+                                },
+                                required=["title"],
+                            ),
+                        ),
+                        "planning_days": types.Schema(
                             type="INTEGER",
-                            description="Estimated duration in minutes",
+                            description="How many days ahead to plan over. Default 14.",
                         ),
                     },
-                    required=["task_title", "duration_minutes"],
+                    required=["items"],
                 ),
+            ),
+            types.FunctionDeclaration(
+                name="get_user_preferences",
+                description=(
+                    "Fetch the user's schedule preferences: work start/end time, work days (0=Sun…6=Sat), "
+                    "break duration in minutes, and max daily tasks. "
+                    "Call this before scheduling anything so you respect the user's working hours."
+                ),
+                parameters=types.Schema(type="OBJECT", properties={}, required=[]),
             ),
             types.FunctionDeclaration(
                 name="search_items",
@@ -241,6 +266,16 @@ Rules you must always follow:
 - When using get_schedule, prefer wide date ranges. For "this week" use the full Mon–Sun range. For anything described as recent, past, or overdue, set start_date at least 30 days before today. Never assume an item only exists in the future.
 - If get_schedule returns an empty result or does not contain the item the user mentioned, immediately call search_items with the item's title before telling the user it was not found.
 - Tasks may have no due_date. Use list_all_tasks to see all tasks when the user asks about open or pending work without specifying a date.
+- If a tool returns an error containing "INVALID_UUID", you MUST call search_items immediately with the item's name to retrieve the real UUID, then retry the original operation with that UUID. Never tell the user the operation failed — retry first.
+- Never reuse a UUID from memory between conversation turns. Always extract the UUID fresh from the most recent tool result. If you are not looking at a tool result right now that contains the UUID, call search_items to get it.
+- When the user asks to schedule or add multiple items (e.g. "add event1, event2, event3 across my week"), ALWAYS follow this sequence:
+  1. Call get_user_preferences AND get_schedule (for the relevant date range) in the same round to gather context.
+  2. Call suggest_schedule with ALL items at once to get the full scheduling context back.
+  3. Use the returned work hours, work days, break duration, and existing calendar to assign each item a specific non-overlapping start_time and end_time.
+  4. Create all items in parallel (multiple create_event or create_task calls in a single round).
+- When distributing multiple items across days: respect workDays (only schedule on those days), stay within workStartTime–workEndTime, leave at least breakDurationMinutes between items, and do not exceed maxDailyTasks per day.
+- For items where the user gives no duration, default to 60 minutes.
+- Always confirm the full schedule plan in a concise summary after creating all items (e.g. "Scheduled 4 events across Mon–Fri ✓").
 """
 
 
@@ -299,7 +334,7 @@ async def run_agent(
     history: list[types.Content],
     user_jwt: str,
     user_timezone: str = "UTC",
-    max_tool_rounds: int = 8,
+    max_tool_rounds: int = 16,
 ) -> tuple[str, list[types.Content]]:
     """
     Run the full Gemini function-call loop for one user turn.
@@ -373,7 +408,7 @@ async def stream_agent(
     history: list[types.Content],
     user_jwt: str,
     user_timezone: str = "UTC",
-    max_tool_rounds: int = 8,
+    max_tool_rounds: int = 16,
 ):
     """
     Async generator that yields text tokens as they arrive.
@@ -420,6 +455,9 @@ async def stream_agent(
             # Signal the UI which tool is running
             yield {"tool": fc.name, "args": dict(fc.args)}
             result = await execute_tool(fc.name, fc.args, user_jwt)
+            # Signal whether the tool succeeded or failed
+            failed = isinstance(result, dict) and "error" in result
+            yield {"tool_result": fc.name, "success": not failed, "error": result.get("error") if failed else None}
             tool_response_parts.append(
                 types.Part(
                     function_response=types.FunctionResponse(

@@ -106,8 +106,16 @@ async def websocket_chat(
                     user_timezone=user_timezone,
                 ):
                     if isinstance(chunk, dict):
-                        tool_calls_log.append(chunk)
-                        await websocket.send_text(json.dumps({"type": "tool", "name": chunk["tool"], "args": chunk["args"]}))
+                        if "tool_result" in chunk:
+                            await websocket.send_text(json.dumps({
+                                "type": "tool_result",
+                                "name": chunk["tool_result"],
+                                "success": chunk["success"],
+                                "error": chunk.get("error"),
+                            }))
+                        else:
+                            tool_calls_log.append(chunk)
+                            await websocket.send_text(json.dumps({"type": "tool", "name": chunk["tool"], "args": chunk["args"]}))
                     else:
                         assistant_text += chunk
                         await websocket.send_text(json.dumps({"type": "token", "text": chunk}))

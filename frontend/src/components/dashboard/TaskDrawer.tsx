@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { X, Loader2, CheckCircle } from 'lucide-react'
+import { X, Loader2, CheckCircle, Trash2 } from 'lucide-react'
 import springApi from '@/lib/springApi'
 import type { Task, TaskRequest, TaskPriority, TaskStatus } from '@/types/task.types'
 
@@ -47,7 +47,26 @@ export function TaskDrawer({ isOpen, onClose, onSaved, task, defaultDate }: Task
   const [folders, setFolders] = useState<Folder[]>([])
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const handleDelete = async () => {
+    if (!task) return
+    if (!confirmDelete) { setConfirmDelete(true); return }
+    setDeleting(true)
+    setError(null)
+    try {
+      await springApi.delete(`/api/tasks/${task.id}`)
+      onSaved()
+      onClose()
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to delete task')
+    } finally {
+      setDeleting(false)
+      setConfirmDelete(false)
+    }
+  }
 
   // Reset form when drawer opens/closes or task changes
   useEffect(() => {
@@ -71,6 +90,7 @@ export function TaskDrawer({ isOpen, onClose, onSaved, task, defaultDate }: Task
       }
       setSaved(false)
       setError(null)
+      setConfirmDelete(false)
     }
   }, [isOpen, task, defaultDate])
 
@@ -274,31 +294,51 @@ export function TaskDrawer({ isOpen, onClose, onSaved, task, defaultDate }: Task
         </form>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-100 flex gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-500 hover:bg-slate-50 transition-colors font-medium"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={saving || saved}
-            className={`flex-1 py-2.5 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
-              saved
-                ? 'bg-green-500 text-white'
-                : 'bg-sky-500 hover:bg-sky-600 text-white disabled:opacity-60'
-            }`}
-          >
-            {saved ? (
-              <><CheckCircle size={15} /> Saved!</>
-            ) : saving ? (
-              <><Loader2 size={15} className="animate-spin" /> Saving...</>
-            ) : (
-              isEdit ? 'Update Task' : 'Create Task'
-            )}
-          </button>
+        <div className="px-6 py-4 border-t border-slate-100 space-y-2">
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-500 hover:bg-slate-50 transition-colors font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={saving || saved}
+              className={`flex-1 py-2.5 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
+                saved
+                  ? 'bg-green-500 text-white'
+                  : 'bg-sky-500 hover:bg-sky-600 text-white disabled:opacity-60'
+              }`}
+            >
+              {saved ? (
+                <><CheckCircle size={15} /> Saved!</>
+              ) : saving ? (
+                <><Loader2 size={15} className="animate-spin" /> Saving...</>
+              ) : (
+                isEdit ? 'Update Task' : 'Create Task'
+              )}
+            </button>
+          </div>
+          {isEdit && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={deleting}
+              className={`w-full py-2.5 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
+                confirmDelete
+                  ? 'bg-red-500 hover:bg-red-600 text-white'
+                  : 'border border-red-200 text-red-400 hover:bg-red-50'
+              } disabled:opacity-60`}
+            >
+              {deleting ? (
+                <><Loader2 size={15} className="animate-spin" /> Deleting...</>
+              ) : (
+                <><Trash2 size={15} />{confirmDelete ? 'Confirm Delete' : 'Delete Task'}</>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </>

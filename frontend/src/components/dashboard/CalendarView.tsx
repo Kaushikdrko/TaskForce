@@ -6,6 +6,7 @@ import interactionPlugin, { type DateClickArg } from '@fullcalendar/interaction'
 import type { EventClickArg } from '@fullcalendar/core'
 import { useCalendar } from '@/hooks/useCalendar'
 import type { FcEvent } from '@/hooks/useCalendar'
+import { useAuthStore } from '@/store/authStore'
 
 interface CalendarViewProps {
   activeFolderId: string | null
@@ -22,6 +23,8 @@ export function CalendarView({
   calendarRefetchRef,
 }: CalendarViewProps) {
   const { events, fetchEvents, refetch } = useCalendar()
+  const { profile } = useAuthStore()
+  const timeZone = profile?.timezone || 'UTC'
   const fcRef = useRef<InstanceType<typeof FullCalendar>>(null)
   const currentRangeRef = useRef<{ start: string; end: string } | null>(null)
 
@@ -71,8 +74,8 @@ export function CalendarView({
           nowIndicator={true}
           editable={true}
           selectable={true}
-          slotMinTime="08:00:00"
-          slotMaxTime="20:00:00"
+          timeZone={timeZone}
+          scrollTime="06:00:00"
         />
       </div>
     </div>

@@ -27,12 +27,17 @@ export function useCalendar() {
     end: string,
     folderId?: string | null
   ) => {
+    const toOffsetStr = (s: string) =>
+      s.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(s) ? s : s + 'Z'
+    const normStart = toOffsetStr(start)
+    const normEnd = toOffsetStr(end)
+
     setLoading(true)
-    lastRangeRef.current = { start, end }
+    lastRangeRef.current = { start: normStart, end: normEnd }
     lastFolderRef.current = folderId ?? null
 
     try {
-      const params: Record<string, string> = { start, end }
+      const params: Record<string, string> = { start: normStart, end: normEnd }
       if (folderId) params.folder_id = folderId
 
       const { data } = await springApi.get<ApiEvent[]>('/api/events', { params })
